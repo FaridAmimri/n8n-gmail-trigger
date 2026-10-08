@@ -1,4 +1,4 @@
-# Étape 2 : workflow n8n importable
+# Workflow n8n importable (étapes 2 et 3)
 
 Fichiers de ce dossier :
 
@@ -58,16 +58,33 @@ Il renvoie un objet dont les clés sont exactement les en-têtes de colonnes du 
 1. **Créer le Google Sheet**, avec un onglet (par ex. `Mails`) et cette ligne 1, exactement :
    `Date | Expéditeur | Email | Objet | Catégorie | Priorité | Résumé | Action | Lien | Message ID | Traité le | Statut`
 2. **Créer les credentials dans n8n** (Credentials → Add) : `Gmail OAuth2`, `Google Sheets OAuth2`, `Anthropic` (clé API).
-3. **Importer `workflow-alerte.json`** (Workflows → Add → Import from File). Dans `Envoyer l'alerte` : choisis le credential Gmail et remplace `REMPLACER_PAR_TON_ADRESSE@gmail.com`. Enregistre.
-4. **Importer `workflow-principal.json`**, puis dans chaque nœud :
-   - `Gmail Trigger` : credential Gmail ;
+3. **Importer `workflow-alerte.json`** (Workflows → Add → Import from File). Dans `Envoyer l'alerte` : choisis le credential Gmail et remplace `REMPLACER_PAR_TON_ADRESSE@gmail.com`. Enregistre, puis clique **Publish** : depuis n8n 2.x, un workflow d'erreur non publié ne peut pas être choisi comme Error workflow (option grisée avec un triangle).
+4. **Importer `workflow-principal-v2.json`** (version durcie, à préférer à `workflow-principal.json`), puis dans chaque nœud :
+   - `Gmail Trigger` et `Relire le mail` : credential Gmail ;
    - `Claude (classer et résumer)` : Authentication = Predefined Credential Type, type Anthropic, ton credential ;
-   - `Google Sheets` : credential, puis choisis le document et l'onglet dans les listes. Vérifie que `Column to match on` vaut toujours `Message ID` (n8n peut le réinitialiser après le choix de l'onglet).
+   - `Google Sheets` : credential, puis choisis le document et l'onglet dans les listes. **`Column to match on` est réinitialisé à vide après le choix de l'onglet** (constaté le 2026-10-08) : remets `Message ID`, sinon l'exécution échoue avec « The 'Column to Match On' parameter is required ».
+   - `Lignes en erreur` (v2) : même credential, même document, même onglet.
 5. **Relier l'alerte** : dans le workflow principal, Settings → Error workflow → « Alerte erreurs (Gmail → Claude → Sheets) ».
 6. **Premier test manuel** : dans `Gmail Trigger`, clique « Fetch Test Event », puis « Test workflow ». Vérifie la ligne ajoutée dans le Sheet.
-7. **Activer** le workflow principal seulement après ce test. (Le workflow d'alerte n'a pas besoin d'être activé.)
+7. **Publier** le workflow principal (bouton Publish) seulement après ce test. Dans le bouton Execute, la flèche ⌄ permet de choisir le déclencheur à tester (Gmail Trigger ou Reprise des erreurs).
 
-Les tests complets (mails variés, doublons, erreurs, coût) sont l'étape 3.
+## Étape 3 : résultats des tests (2026-10-08)
+
+| Test | Résultat |
+|---|---|
+| Champs du Gmail Trigger (`id`, `threadId`, `date`, `subject`, `from.value[0]`, `text`, `html`) | OK, rien à corriger |
+| Exécution complète sur un vrai mail | OK, ligne correcte (date Paris, catégorie, résumé < 200 car.) |
+| Doublons (même mail relancé) | OK, une seule ligne, mise à jour via `Message ID` |
+| Branche erreur (URL Claude cassée exprès) | OK, ligne `Erreur API` avec la cause dans `Action`, le lot continue |
+| Reprise des erreurs | OK, la ligne `Erreur API` est remplacée par le bon classement ; `Relire le mail` sort les mêmes champs que le trigger |
+| Coût | 2 950 tokens entrée + 457 sortie (dont 307 de thinking) ≈ 0,0005 $ par mail, ≈ 1,30 $/mois à 80 mails/jour |
+
+Changements de la v2 (`workflow-principal-v2.json`) :
+- nœud Claude en « Continue (using error output) » : un échec après 3 essais n'arrête plus le lot ;
+- `Marquer en erreur` écrit une ligne `Erreur API` ;
+- déclencheur `Reprise des erreurs` toutes les 6 h (à hh:30) qui relit ces mails dans Gmail et les retraite. Chaque passage compte comme une exécution (≈ 120/mois), d'où 6 h et non 1 h.
+
+Limite connue : un échec de Claude ne déclenche plus le mail d'alerte (l'exécution réussit) ; il est visible dans le Sheet. La priorité peut varier (`haute`/`moyenne`) sur les cas limites.
 
 ---
 

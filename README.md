@@ -7,7 +7,8 @@ de les classer et de les résumer, puis ajoute une ligne par mail dans un Google
 
 | Fichier | Rôle |
 |---|---|
-| `workflow-principal.json` | Workflow principal à importer dans n8n (Gmail → Claude → Google Sheets). |
+| `workflow-principal-v2.json` | **Version à importer** : workflow principal durci (branche erreur + reprise toutes les 6 h). En production depuis le 2026-10-08. |
+| `workflow-principal.json` | Première version du workflow principal (étape 2), gardée pour l'historique. |
 | `workflow-alerte.json` | Workflow d'alerte par mail quand le workflow principal échoue. |
 | `prompt-claude.md` | Le prompt envoyé à Claude et le choix des paramètres. |
 | `guide-import.md` | Étapes pour importer et brancher les workflows dans n8n. |
