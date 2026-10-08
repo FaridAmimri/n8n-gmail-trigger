@@ -1,0 +1,21 @@
+# Secrets et variables locales (ne jamais versionner)
+.env
+.env.*
+*.key
+*.pem
+credentials*.json
+
+# Exports de données réelles (mails, tableaux) faits pour tester
+exports/
+*.csv
+*.xlsx
+
+# Fichiers système et éditeur
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+*.tmp
+*.bak
+~$*

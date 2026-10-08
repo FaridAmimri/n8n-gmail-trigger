@@ -1,0 +1,54 @@
+{
+  "name": "Alerte erreurs (Gmail → Claude → Sheets)",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "e4765fcc-f79a-4b0d-8091-9f7a9c66b835",
+      "name": "Error Trigger",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "REMPLACER_PAR_TON_ADRESSE@gmail.com",
+        "subject": "=⚠️ n8n : échec de « {{ $json.workflow.name }} »",
+        "emailType": "text",
+        "message": "=Le workflow « {{ $json.workflow.name }} » a échoué.\n\nNœud en erreur : {{ $json.execution ? $json.execution.lastNodeExecuted : 'déclencheur (Gmail Trigger)' }}\nMessage : {{ $json.execution ? $json.execution.error.message : $json.trigger.error.message }}\nExécution : {{ $json.execution ? $json.execution.url : 'pas de lien (erreur du déclencheur)' }}\n\nLes mails de cette exécution n'ont peut-être pas été ajoutés au tableau.",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "562e8063-5407-4bd0-b062-19b92337eef9",
+      "name": "Envoyer l'alerte",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        220,
+        0
+      ]
+    }
+  ],
+  "connections": {
+    "Error Trigger": {
+      "main": [
+        [
+          {
+            "node": "Envoyer l'alerte",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Europe/Paris"
+  },
+  "active": false,
+  "pinData": {}
+}
